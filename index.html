@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daniel Ambrosi — Exhibition Catalogues</title>
+<meta name="description" content="Digital exhibition catalogues for Daniel Ambrosi's solo exhibitions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #111110;
+    --panel: #1b1a18;
+    --ink: #ecE8e1;
+    --muted: #9c978e;
+    --line: #2e2c29;
+    --accent: #c9b38a;
+    --serif: "Cormorant Garamond", Georgia, serif;
+    --sans: "Inter", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); }
+  a { color: inherit; }
+
+  /* ---------- Landing ---------- */
+  .landing { max-width: 1100px; margin: 0 auto; padding: 72px 24px 48px; }
+  .landing header { text-align: center; margin-bottom: 56px; }
+  .landing h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(34px, 5vw, 52px); margin: 0 0 8px; letter-spacing: .01em; }
+  .landing header p { color: var(--muted); margin: 0; font-size: 15px; letter-spacing: .08em; text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 380px)); justify-content: center; align-items: start; gap: 56px; }
+  .card { display: block; width: 100%; background: none; border: 0; padding: 0; color: inherit; text-align: left; cursor: pointer; font: inherit; }
+  .cover { aspect-ratio: 3 / 4; background: var(--panel); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; overflow: hidden; transition: transform .35s ease, box-shadow .35s ease; }
+  .cover canvas { max-width: 100%; max-height: 100%; display: block; }
+  .card:hover .cover, .card:focus-visible .cover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(0,0,0,.5); }
+  .card:focus-visible { outline: none; }
+  .card:focus-visible .cover { outline: 2px solid var(--accent); outline-offset: 4px; }
+  .card h2 { font-family: var(--serif); font-weight: 500; font-size: 26px; margin: 20px 0 4px; line-height: 1.2; }
+  .card .meta { color: var(--muted); font-size: 14px; }
+  .loading-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); animation: pulse 1.2s infinite ease-in-out; }
+  @keyframes pulse { 0%,100% { opacity: .2 } 50% { opacity: 1 } }
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 72px; line-height: 1.8; }
+  footer a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line); }
+  footer a:hover { color: var(--ink); }
+
+  /* ---------- Viewer ---------- */
+  .viewer { position: fixed; inset: 0; background: var(--bg); display: none; flex-direction: column; z-index: 10; }
+  .viewer.open { display: flex; }
+  .bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); min-height: 56px; }
+  .bar .title { font-family: var(--serif); font-size: 20px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .btn { background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 4px; height: 36px; min-width: 36px; padding: 0 12px; font: 500 13px var(--sans); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
+  .btn:hover { border-color: var(--muted); }
+  .btn:disabled { opacity: .3; cursor: default; }
+  .btn svg { width: 16px; height: 16px; }
+  .stage { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; perspective: 2400px; }
+  .spread { display: flex; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+  .page { position: relative; background: #fff; transform-style: preserve-3d; backface-visibility: hidden; }
+  .page canvas { display: block; width: 100%; height: 100%; }
+  .page.left { transform-origin: right center; }
+  .page.right { transform-origin: left center; }
+  .page.solo { transform-origin: center center; }
+  .spread.two .page.left::after { content: ""; position: absolute; inset: 0 0 0 auto; width: 40px; background: linear-gradient(to left, rgba(0,0,0,.18), transparent); pointer-events: none; }
+  .spread.two .page.right::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 40px; background: linear-gradient(to right, rgba(0,0,0,.18), transparent); pointer-events: none; }
+  .links { position: absolute; inset: 0; z-index: 2; }
+  .links a { position: absolute; display: block; border-radius: 2px; transition: background .2s; }
+  .links a:hover { background: rgba(201,179,138,.22); outline: 1px solid rgba(201,179,138,.7); }
+  .nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 5; width: 48px; height: 48px; border-radius: 50%; background: rgba(27,26,24,.8); border: 1px solid var(--line); color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .nav:hover { border-color: var(--muted); }
+  .nav:disabled { opacity: 0; pointer-events: none; }
+  .nav.prev { left: 16px; } .nav.next { right: 16px; }
+  .nav svg { width: 22px; height: 22px; }
+  .foot { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 10px 16px 14px; color: var(--muted); font-size: 13px; }
+  .foot input[type=range] { width: min(420px, 50vw); accent-color: var(--accent); }
+  .hint { color: var(--muted); font-size: 12px; text-align: center; padding-bottom: 10px; margin-top: -6px; }
+  .status { position: absolute; color: var(--muted); font-size: 14px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+  /* page-turn animation */
+  @keyframes foldOutLeft  { to { transform: rotateY(90deg); } }
+  @keyframes foldOutRight { to { transform: rotateY(-90deg); } }
+  @keyframes foldInLeft   { from { transform: rotateY(90deg); } to { transform: rotateY(0); } }
+  @keyframes foldInRight  { from { transform: rotateY(-90deg); } to { transform: rotateY(0); } }
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+  @media (max-width: 640px) {
+    .landing { padding-top: 48px; }
+    .bar .title { font-size: 17px; }
+    .btn .label { display: none; }
+    .nav { width: 40px; height: 40px; }
+    .nav.prev { left: 6px; } .nav.next { right: 6px; }
+    .hint { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: 0s !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<main class="landing" id="landing">
+  <header>
+    <h1>Daniel Ambrosi</h1>
+    <p>Exhibition Catalogues</p>
+  </header>
+  <div class="grid" id="grid"></div>
+  <footer>
+    <a href="https://dreamscapes.ai" target="_blank" rel="noopener">dreamscapes.ai</a>
+    &nbsp;·&nbsp;
+    <a href="https://itinerantartmonk.com" target="_blank" rel="noopener">itinerantartmonk.com</a>
+  </footer>
+</main>
+
+<section class="viewer" id="viewer" aria-label="Catalogue viewer">
+  <div class="bar">
+    <button class="btn" id="close" title="All catalogues">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg><span class="label">All catalogues</span>
+    </button>
+    <div class="title" id="vtitle"></div>
+    <button class="btn" id="fs" title="Full screen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span class="label">Full screen</span>
+    </button>
+    <a class="btn" id="dl" download title="Download PDF">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11m0 0l-5-5m5 5l5-5M5 20h14"/></svg><span class="label">PDF</span>
+    </a>
+  </div>
+  <div class="stage" id="stage">
+    <button class="nav prev" id="prev" aria-label="Previous page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="spread" id="spread"></div>
+    <div class="status" id="status"></div>
+    <button class="nav next" id="next" aria-label="Next page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></button>
+  </div>
+  <div class="foot">
+    <span id="pageLabel">–</span>
+    <input type="range" id="slider" min="0" max="0" value="0" aria-label="Jump to page">
+  </div>
+  <div class="hint">Click an artwork to explore it in full detail · Arrow keys turn pages</div>
+</section>
+
+<script type="module">
+// ---------------------------------------------------------------
+// Catalogues. To add one: upload its PDF next to this file and add
+// an entry here. "id" becomes the direct link, e.g. …/#central-park
+// ---------------------------------------------------------------
+const CATALOGUES = [
+  {
+    id: "central-park",
+    title: "Daniel Ambrosi: Central Park",
+    meta: "Solo exhibition · 2025",
+    file: "DanielAmbrosi-CentralParkExhibitionCatalogue-2025HR-AO1.pdf",
+  },
+  {
+    id: "capability-brown",
+    title: "Daniel Ambrosi: AI and the Landscapes of Capability Brown",
+    meta: "Solo exhibition · 2023",
+    file: "DanielAmbrosi-CapabilityBrownExhibitionCatalogue2023HR.pdf",
+  },
+];
+
+const PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/";
+const pdfjsLib = await import(PDFJS + "pdf.min.mjs");
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.mjs";
+
+const $ = (id) => document.getElementById(id);
+const docs = {};                         // cache of loaded PDFs
+function loadDoc(cat) {
+  if (!docs[cat.id]) {
+    // Range requests: only the pages being viewed are downloaded.
+    docs[cat.id] = pdfjsLib.getDocument({ url: cat.file, disableAutoFetch: true, disableStream: true }).promise;
+  }
+  return docs[cat.id];
+}
+
+// ---------- Landing ----------
+for (const cat of CATALOGUES) {
+  const card = document.createElement("button");
+  card.className = "card";
+  card.innerHTML = `<div class="cover"><div class="loading-dot"></div></div><h2></h2><div class="meta"></div>`;
+  card.querySelector("h2").textContent = cat.title;
+  card.querySelector(".meta").textContent = cat.meta;
+  card.addEventListener("click", () => { location.hash = cat.id; });
+  $("grid").appendChild(card);
+  loadDoc(cat).then(async (pdf) => {
+    const page = await pdf.getPage(1);
+    const base = page.getViewport({ scale: 1 });
+    const scale = (560 / base.width);
+    const vp = page.getViewport({ scale });
+    const c = document.createElement("canvas");
+    c.width = vp.width; c.height = vp.height;
+    await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
+    const cover = card.querySelector(".cover");
+    cover.style.aspectRatio = `${base.width} / ${base.height}`;
+    cover.replaceChildren(c);
+  }).catch(() => { card.querySelector(".cover").textContent = "Preview unavailable"; });
+}
+
+// ---------- Viewer ----------
+let cur = null, pdf = null, pos = 1, busy = false, renderToken = 0;
+const twoUp = () => window.innerWidth >= 900 && window.innerWidth > window.innerHeight * 0.9;
+
+// Page 1 (cover) alone; then 2–3, 4–5 … in spread mode.
+function pagesAt(p) {
+  if (!twoUp() || p === 1) return [p];
+  const left = p % 2 === 0 ? p : p - 1;
+  return [left, left + 1].filter((n) => n <= pdf.numPages);
+}
+function step(dir) {
+  const shown = pagesAt(pos);
+  if (!twoUp()) return pos + dir;
+  return dir > 0 ? shown[shown.length - 1] + 1 : (shown[0] === 2 ? 1 : shown[0] - 2);
+}
+
+async function renderPageEl(n, box, side) {
+  const page = await pdf.getPage(n);
+  const base = page.getViewport({ scale: 1 });
+  const cssScale = box / base.width;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  const vp = page.getViewport({ scale: cssScale * dpr });
+  const cssVp = page.getViewport({ scale: cssScale });
+
+  const el = document.createElement("div");
+  el.className = "page " + side;
+  el.style.width = cssVp.width + "px";
+  el.style.height = cssVp.height + "px";
+  const c = document.createElement("canvas");
+  c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+  el.appendChild(c);
+  await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
+
+  // Clickable links from the PDF
+  const layer = document.createElement("div");
+  layer.className = "links";
+  const annots = await page.getAnnotations({ intent: "display" });
+  for (const a of annots) {
+    if (a.subtype !== "Link") continue;
+    const [x1, y1, x2, y2] = cssVp.convertToViewportRectangle(a.rect);
+    const link = document.createElement("a");
+    Object.assign(link.style, {
+      left: Math.min(x1, x2) + "px", top: Math.min(y1, y2) + "px",
+      width: Math.abs(x2 - x1) + "px", height: Math.abs(y2 - y1) + "px",
+    });
+    if (a.url || a.unsafeUrl) {
+      link.href = a.url || a.unsafeUrl;
+      link.target = "_blank"; link.rel = "noopener";
+      link.title = link.href;
+    } else if (a.dest) {
+      link.href = "#";
+      link.addEventListener("click", async (e) => {
+        e.preventDefault();
+        const dest = typeof a.dest === "string" ? await pdf.getDestination(a.dest) : a.dest;
+        if (dest) go((await pdf.getPageIndex(dest[0])) + 1);
+      });
+    } else continue;
+    layer.appendChild(link);
+  }
+  el.appendChild(layer);
+  return { el, ratio: base.height / base.width };
+}
+
+async function renderSpread(dir = 0) {
+  const token = ++renderToken;
+  const nums = pagesAt(pos);
+  const stage = $("stage");
+  const availW = stage.clientWidth - (window.innerWidth < 640 ? 16 : 140);
+  const availH = stage.clientHeight - 32;
+
+  // Size pages to fit the stage
+  const first = await pdf.getPage(nums[0]);
+  const b = first.getViewport({ scale: 1 });
+  const ratio = b.height / b.width;
+  const cols = twoUp() ? 2 : 1;   // cover and spreads share one page size
+  const pageW = Math.floor(Math.min(availW / cols, availH / ratio));
+
+  const sides = nums.length === 2 ? ["left", "right"] : ["solo"];
+  const built = await Promise.all(nums.map((n, i) => renderPageEl(n, pageW, sides[i])));
+  if (token !== renderToken) return;
+
+  const spread = $("spread");
+  const next = document.createElement("div");
+  next.className = "spread" + (built.length === 2 ? " two" : "");
+  next.id = "spread";
+  built.forEach((b) => next.appendChild(b.el));
+
+  // Page-turn animation
+  const ms = 260;
+  if (dir !== 0 && spread.children.length) {
+    const old = [...spread.children];
+    const turning = dir > 0 ? old[old.length - 1] : old[0];
+    turning.style.animation = `${dir > 0 ? (turning.classList.contains("solo") ? "foldOutLeft" : "foldOutRight") : "foldOutLeft"} ${ms}ms ease-in forwards`;
+    await new Promise((r) => setTimeout(r, ms));
+    if (token !== renderToken) return;
+    const incoming = dir > 0 ? next.children[0] : next.children[next.children.length - 1];
+    const anim = dir > 0 ? (incoming.classList.contains("solo") ? "foldInRight" : "foldInLeft") : "foldInRight";
+    incoming.style.animation = `${anim} ${ms}ms ease-out`;
+  } else {
+    next.style.animation = "fadeIn .3s ease";
+  }
+  spread.replaceWith(next);
+  $("status").replaceChildren();
+  updateChrome();
+}
+
+function updateChrome() {
+  const nums = pagesAt(pos);
+  $("pageLabel").textContent = (nums.length === 2 ? `${nums[0]}–${nums[1]}` : nums[0]) + ` of ${pdf.numPages}`;
+  $("prev").disabled = nums[0] <= 1;
+  $("next").disabled = nums[nums.length - 1] >= pdf.numPages;
+  $("slider").max = pdf.numPages; $("slider").min = 1; $("slider").value = nums[0];
+}
+
+async function go(p, dir) {
+  if (!pdf) return;
+  p = Math.max(1, Math.min(pdf.numPages, p));
+  const oldFirst = pagesAt(pos)[0];
+  pos = p;
+  if (pagesAt(pos)[0] === oldFirst && dir !== undefined) return;
+  if (busy) { renderSpread(0); return; }
+  busy = true;
+  try { await renderSpread(dir ?? 0); } finally { busy = false; }
+  // Warm up the next spread in the background
+  const ahead = step(1);
+  if (ahead <= pdf.numPages) pagesAt(ahead).forEach((n) => pdf.getPage(n));
+}
+
+async function openCatalogue(cat) {
+  cur = cat; pdf = null; pos = 1;
+  $("vtitle").textContent = cat.title;
+  $("dl").href = cat.file;
+  document.title = cat.title;
+  $("viewer").classList.add("open");
+  document.body.style.overflow = "hidden";
+  $("spread").replaceChildren();
+  $("status").innerHTML = `<div class="loading-dot"></div><span>Opening catalogue…</span>`;
+  try {
+    pdf = await loadDoc(cat);
+    if (cur !== cat) return;
+    await go(1);
+  } catch (e) {
+    $("status").innerHTML = "";
+    const msg = document.createElement("span");
+    msg.innerHTML = `This catalogue couldn't be displayed here. <a href="${cat.file}">Open the PDF directly</a>.`;
+    $("status").appendChild(msg);
+  }
+}
+
+function closeViewer() {
+  cur = null; pdf = null;
+  $("viewer").classList.remove("open");
+  document.body.style.overflow = "";
+  document.title = "Daniel Ambrosi — Exhibition Catalogues";
+  if (document.fullscreenElement) document.exitFullscreen();
+}
+
+function route() {
+  const cat = CATALOGUES.find((c) => c.id === location.hash.slice(1));
+  if (cat) { if (cur !== cat) openCatalogue(cat); } else closeViewer();
+}
+
+$("prev").onclick = () => go(step(-1), -1);
+$("next").onclick = () => go(step(1), 1);
+$("slider").oninput = (e) => go(+e.target.value);
+$("close").onclick = () => { history.pushState("", "", location.pathname); route(); };
+$("fs").onclick = () => document.fullscreenElement ? document.exitFullscreen() : $("viewer").requestFullscreen?.();
+document.addEventListener("keydown", (e) => {
+  if (!pdf || !$("viewer").classList.contains("open")) return;
+  if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); $("next").click(); }
+  if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); $("prev").click(); }
+  if (e.key === "Home") go(1);
+  if (e.key === "End") go(pdf.numPages);
+  if (e.key === "Escape" && !document.fullscreenElement) $("close").click();
+});
+// Swipe on touch screens
+let tx = null;
+$("stage").addEventListener("touchstart", (e) => { tx = e.touches[0].clientX; }, { passive: true });
+$("stage").addEventListener("touchend", (e) => {
+  if (tx === null) return;
+  const dx = e.changedTouches[0].clientX - tx; tx = null;
+  if (Math.abs(dx) > 50) (dx < 0 ? $("next") : $("prev")).click();
+});
+let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => pdf && renderSpread(0), 200); });
+window.addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>
