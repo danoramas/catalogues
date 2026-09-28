@@ -191,7 +191,8 @@ for (const cat of CATALOGUES) {
 
 // ---------- Viewer ----------
 let cur = null, pdf = null, pos = 1, busy = false, renderToken = 0;
-const twoUp = () => window.innerWidth >= 900 && window.innerWidth > window.innerHeight * 0.9;
+// The catalogues are laid out for single-page viewing, so always show one page at a time.
+const twoUp = () => false;
 
 // Page 1 (cover) alone; then 2–3, 4–5 … in spread mode.
 function pagesAt(p) {
